@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "rx-zephyr"
+version = "0.0.1"
+description = "Rx-zephyr - A FastAPI template designed for quick project setup, featuring configuration and data source management for MySQL, PostgreSQL, Redis, and MongoDB."
+authors = ["zhouruixiang <handsomeRxxx@163.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/Rx979/fast-sailor"
+repository = "https://github.com/Rx979/fast-sailor.git"
+packages = [{include = 'zephyr'}]
+
+[tool.poetry.dependencies]
+python = ">=3.10, <4"
+fastapi = "^0.114.2"
+uvicorn = {extras = ["standard"], version = "^0.30.6"}
+sqlalchemy = "^2.0.34"
+nacos-sdk-python = "^1.0.0"
+redis = "^5.0.8"
+pandas = "^2.2.2"
+motor = "^3.5.1"
+aiomysql = "^0.2.0"
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+black = "^24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
