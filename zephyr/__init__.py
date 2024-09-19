@@ -1,3 +1,3 @@
-from zephyr.app import App
+from zephyr.zephyr import Zephyr
 
-__all__ = ["App"]
+__all__ = ["Zephyr"]

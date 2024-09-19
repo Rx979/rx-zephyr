@@ -12,7 +12,7 @@ from zephyr.database.relational.base import BaseDatabase
 from zephyr.exception.database import DatabaseNotSupportedException
 
 
-class App:
+class Zephyr:
     _app_: Optional[FastAPI] = None
     _config_manager_: Optional[ConfigManager] = None
     _database_: Optional[BaseDatabase] = None
@@ -100,13 +100,13 @@ class App:
     async def lifespan(app: FastAPI):
         """Manage the application lifecycle"""
         try:
-            await App._initialize_connections()
-            App._log_app_info()
+            await Zephyr._initialize_connections()
+            Zephyr._log_app_info()
             yield
         except Exception as e:
-            App._logger_.error(f"Error during application's lifespan {str(e)}")
+            Zephyr._logger_.error(f"Error during application's lifespan {str(e)}")
         finally:
-            await App._close_connections()
+            await Zephyr._close_connections()
 
     @classmethod
     async def _initialize_connections(cls):
