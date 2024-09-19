@@ -1,14 +1,13 @@
 from typing import Any, Dict, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
-from uvicorn.config import LOGGING_CONFIG
 
-from ..const import CONFIG_DIR_PATH, LOGGER_CONFIGS
+from zephyr.const import CONFIG_DIR_PATH, DEFAULT_LOGGER_CONFIG, LOGGER_CONFIGS
 
 
 # uvicorn服务器配置
 class ServerConfig(BaseModel):
-    app: str = Field(default="core.app:App._app_", frozen=True)
+    app: str = Field(default="zephyr.app:App._app_", frozen=True)
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = False
@@ -22,9 +21,9 @@ class ServerConfig(BaseModel):
         super().__init__(**data)
         # 根据 factory 属性设置 app 字段
         if self.factory:
-            object.__setattr__(self, "app", "core.app:App._init_app")
+            object.__setattr__(self, "app", "zephyr.app:App._init_app")
         else:
-            object.__setattr__(self, "app", "core.app:App._app_")
+            object.__setattr__(self, "app", "zephyr.app:App._app_")
 
     @staticmethod
     def get_log_config() -> Union[Dict[str, Any], str]:
@@ -33,7 +32,7 @@ class ServerConfig(BaseModel):
             if log_config_path.exists():
                 return str(log_config_path)
 
-        return LOGGING_CONFIG
+        return DEFAULT_LOGGER_CONFIG
 
 
 # FastAPI配置
@@ -48,7 +47,7 @@ class FastAPIConfig(BaseModel):
     server: ServerConfig = ServerConfig()
 
 
-# Nacos配置
+# Nacos 配置
 class NacosConfig(BaseModel):
     enabled: bool = False
     host: str = "127.0.0.1:8848"

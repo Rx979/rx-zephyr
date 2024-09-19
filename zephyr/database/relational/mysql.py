@@ -19,8 +19,8 @@ class MySQLDatabase(BaseDatabase):
     ):
         super().__init__(host, port, username, password, database, *args, **kwargs)
 
-    @property
-    def database_type(self) -> str:
+    @staticmethod
+    def database_type() -> str:
         return "mysql"
 
     @property

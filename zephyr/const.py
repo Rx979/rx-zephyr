@@ -20,31 +20,66 @@ LOGGER_CONFIGS = ["logging.yml", "logging.yaml"]
 
 BANNER_FILES = ["banner.txt", "banner"]
 
-# 系统编码
+DEFAULT_BANNER = r"""
+    .______      ___   ___ ___   ___ ___   ___
+    |   _  \     \  \ /  / \  \ /  / \  \ /  /
+    |  |_)  |     \  V  /   \  V  /   \  V  / 
+    |      /       >   <     >   <     >   <  
+    |  |\  \----. /  .  \   /  .  \   /  .  \ 
+    | _| `._____|/__/ \__\ /__/ \__\ /__/ \__\
+"""
+
 SYSTEM_ENCODING = "utf-8"
 
 DEFAULT_LOGGER_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "standard": {
+            "()": "zephyr.logging.ZephyrFormatter",
+            "fmt": "%(asctime)s %(levelprefix)s [%(threadName)s] - %(name)s [%(lineno)d] - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
         "detailed": {
-            "format": "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
+            "()": "zephyr.logging.ZephyrFormatter",
+            "fmt": "%(asctime)s - %(levelname)s - [%(threadName)s] - %(name)s [%(lineno)d] - %(message)s",
         },
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
             "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
             "formatter": "standard",
         },
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
+        "info": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "level": "INFO",
             "formatter": "detailed",
-            "filename": "app.log",
-            "mode": "a",
+            "filename": "logs/app.log",
+            "when": "midnight",
+            "interval": 1,
+            "backupCount": 5,
+            "encoding": "utf8",
+        },
+        "error": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "level": "ERROR",
+            "formatter": "detailed",
+            "filename": "logs/error.log",
+            "when": "midnight",
+            "interval": 1,
+            "backupCount": 5,
+            "encoding": "utf8",
         },
     },
-    "root": {"level": "DEBUG", "handlers": ["console", "file"]},
+    "loggers": {
+        "uvicorn": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.error": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+    "root": {"level": "INFO", "handlers": ["console", "info", "error"]},
 }

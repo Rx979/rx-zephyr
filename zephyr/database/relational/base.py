@@ -62,9 +62,9 @@ class BaseDatabase(ABC):
         self.engine: Union[AsyncEngine, None] = None
         self.session_maker: Union[async_sessionmaker, None] = None
 
-    @property
+    @staticmethod
     @abstractmethod
-    def database_type(self) -> str:
+    def database_type() -> str:
         """
         返回数据库的类型。
 

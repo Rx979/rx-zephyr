@@ -3,32 +3,32 @@ import logging
 import logging.config
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 from nacos import NacosClient
 
-from ..config.models import AppConfig, NacosConfig
-from ..const import (
+from zephyr.config.models import AppConfig, NacosConfig
+from zephyr.const import (
     BASE_CONFIGS,
     CONFIG_DIR_PATH,
     DEFAULT_LOGGER_CONFIG,
     EXTRA_CONFIGS,
     LOGGER_CONFIGS,
 )
-from ..utils.yaml_utils import yaml_to_dict
+from zephyr.utils.yaml_utils import yaml_to_dict
 
 
 class ConfigManager:
 
     # ConfigManager 实例
-    _instance_: Union[None, "ConfigManager"] = None
+    _instance_: Optional["ConfigManager"] = None
     # 应用配置
-    _app_config_: Union[None, AppConfig] = None
+    _app_config_: Optional[AppConfig] = None
     # 日志logger
-    _logger_: Union[None, logging.Logger] = None
+    _logger_: Optional[logging.Logger] = None
 
     def __new__(cls, *args, **kwargs) -> "ConfigManager":
-        if cls._instance_ is None:
+        if not cls._instance_:
             # 实例化
             cls._instance_ = super(ConfigManager, cls).__new__(cls)
             # 初始化日志配置
