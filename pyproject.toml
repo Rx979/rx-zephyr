@@ -5,8 +5,8 @@ description = "Rx-zephyr - A FastAPI template designed for quick project setup, 
 authors = ["zhouruixiang <handsomeRxxx@163.com>"]
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/Rx979/fast-sailor"
-repository = "https://github.com/Rx979/fast-sailor.git"
+homepage = "https://github.com/Rx979/rx-zephyr"
+repository = "https://github.com/Rx979/rx-zephyr"
 packages = [{include = 'zephyr'}]
 
 [tool.poetry.dependencies]
