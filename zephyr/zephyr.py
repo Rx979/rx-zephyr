@@ -1,64 +1,82 @@
 import logging
-from logging import Logger
 from contextlib import asynccontextmanager
+from logging import Logger
 from typing import Final, List, Optional, Type, Union, ClassVar
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
-from pydantic import BaseModel, Field, PrivateAttr
 
 from zephyr.config.manager import ConfigManager
 from zephyr.const import BANNER_FILES, CONFIG_DIR_PATH, DEFAULT_BANNER
 from zephyr.database.nosql import RedisClient
 from zephyr.database.relational.base import BaseDatabase
 from zephyr.exception.database import DatabaseNotSupportedException
+from zephyr.meta import SingletonMeta
 
 
-def l_span(app: FastAPI):
-    yield
-
-class Zephyr(BaseModel):
-
-
-    _instance_: ClassVar["Zephyr"] = None
-
-    _app: Optional[FastAPI] = PrivateAttr(None)
-    _config_manager: Optional[ConfigManager] = PrivateAttr(None)
-    _database: Optional[BaseDatabase] = PrivateAttr(None)
-    _redis: Optional[RedisClient] = PrivateAttr(None)
+class Zephyr(metaclass=SingletonMeta):
 
     logger: Final[Logger] = logging.getLogger(__name__)
 
-    def __new__(cls, *args, **kwargs):
-        """Determine whether there is an existing FastAPI instance"""
-        if not cls._instance_:
-            cls.print_banner()
-            instance = super(Zephyr, cls).__new__(cls)
-            cls._instance_ = instance
-        return cls._instance_
-
     def __init__(self):
-        super().__init__()
+        self.print_banner()
         self._config_manager = ConfigManager()
         self._app = self._init_app()
         self._database = self._initialize_database()
         self._redis = self._initialize_redis()
 
     @property
-    def app(self):
+    def config_manager(self) -> ConfigManager:
+        return self._config_manager
+
+    @property
+    def app(self) -> Optional[FastAPI]:
         return self._app
+
+    @property
+    def redis(self) -> Optional[RedisClient]:
+        return self._redis
+
+    @property
+    def database(self) -> Optional[BaseDatabase]:
+        return self._database
+
+    @config_manager.setter
+    def config_manager(self, config_manager: ConfigManager) -> None:
+        if not config_manager:
+            self._config_manager = config_manager
+        return
+
+    @app.setter
+    def app(self, app: FastAPI) -> None:
+        if not app:
+            self._app = app
+        return
+
+    @redis.setter
+    def redis(self, redis: RedisClient) -> None:
+        if not redis:
+            self._redis = redis
+        return
+
+    @database.setter
+    def database(self, database: BaseDatabase) -> None:
+        if not database:
+            self._database = database
+        return
+
 
     def run(self):
         """Startup server"""
         server_config = self._config_manager.get_config().app.server
-        config = Config(**server_config.model_dump())
+        config = Config(lifespan='on', **server_config.model_dump())
         server = Server(config)
         server.run()
 
     def _init_app(self):
         """Initialize the App"""
         app_config = self._config_manager.get_config().app.model_dump()
-        return FastAPI(**app_config, lifespan=self.lifespan)
+        return FastAPI(**app_config, lifespan=Zephyr.lifespan)
 
     def _initialize_redis(self) -> Union[RedisClient, None]:
         """initialize Redis"""
@@ -87,6 +105,7 @@ class Zephyr(BaseModel):
             )
         else:
             raise DatabaseNotSupportedException(database_config.database_type)
+
     #
     @staticmethod
     def print_banner():
@@ -105,14 +124,15 @@ class Zephyr(BaseModel):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         """Manage the application lifecycle"""
+        instance = Zephyr()
         try:
-            await Zephyr._instance_._initialize_connections()
-            Zephyr._log_app_info()
+            await instance._initialize_connections()
+            instance._log_app_info()
             yield
         except Exception as e:
-            Zephyr.logger.error(f"Error during application's lifespan {str(e)}")
+            instance.logger.error(f"Error during application's lifespan {str(e)}")
         finally:
-            await Zephyr._instance_._close_connections()
+            await instance._close_connections()
 
     async def _initialize_connections(self):
         """Initializes the Redis and database connection pools"""
@@ -128,11 +148,10 @@ class Zephyr(BaseModel):
         if self.database:
             await self.database.close()
 
-    @classmethod
-    def _log_app_info(cls):
+    def _log_app_info(self):
         """Record application information"""
-        app_config = cls.config_manager.get_config().app
-        cls.logger.info(
+        app_config = self.config_manager.get_config().app
+        self.logger.info(
             f"Application [{app_config.title}] created successfully: "
             f"[{app_config.description}]; version: [{app_config.version}]"
         )
