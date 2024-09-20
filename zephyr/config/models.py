@@ -21,9 +21,9 @@ class ServerConfig(BaseModel):
         super().__init__(**data)
         # 根据 factory 属性设置 app 字段
         if self.factory:
-            object.__setattr__(self, "app", "zephyr.zephyr:Zephyr._init_app")
+            object.__setattr__(self, "app", "zephyr:Zephyr._init_app")
         else:
-            object.__setattr__(self, "app", "zephyr.zephyr:Zephyr._app_")
+            object.__setattr__(self, "app", "zephyr:Zephyr.app")
 
     @staticmethod
     def get_log_config() -> Union[Dict[str, Any], str]:
