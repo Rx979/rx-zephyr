@@ -1,9 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
 from logging import Logger
-from typing import Final, List, Optional, Type, Union, ClassVar
+from typing import Final, List, Optional, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from uvicorn import Config, Server
 
 from zephyr.config.manager import ConfigManager
@@ -21,9 +21,9 @@ class Zephyr(metaclass=SingletonMeta):
     def __init__(self):
         self.print_banner()
         self._config_manager = ConfigManager()
-        self._app = self._init_app()
         self._database = self._initialize_database()
         self._redis = self._initialize_redis()
+        self._app = self._init_app()
 
     @property
     def config_manager(self) -> ConfigManager:
@@ -65,18 +65,28 @@ class Zephyr(metaclass=SingletonMeta):
             self._database = database
         return
 
+    # @classmethod
+    # def router(cls):
+    #     """register router for fastapi"""
+    #     router = APIRouter()
+    #     cls.app
 
     def run(self):
         """Startup server"""
         server_config = self._config_manager.get_config().app.server
-        config = Config(lifespan='on', **server_config.model_dump())
+        if server_config.factory:
+            app = self._init_app
+        else:
+            app = self._app
+
+        config = Config(app=app, **server_config.model_dump())
         server = Server(config)
         server.run()
 
     def _init_app(self):
         """Initialize the App"""
         app_config = self._config_manager.get_config().app.model_dump()
-        return FastAPI(**app_config, lifespan=Zephyr.lifespan)
+        return FastAPI(**app_config, lifespan=self.lifespan)
 
     def _initialize_redis(self) -> Union[RedisClient, None]:
         """initialize Redis"""
@@ -120,9 +130,8 @@ class Zephyr(metaclass=SingletonMeta):
                 break
         print(banner)
 
-    @staticmethod
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(self, app: FastAPI):
         """Manage the application lifecycle"""
         instance = Zephyr()
         try:

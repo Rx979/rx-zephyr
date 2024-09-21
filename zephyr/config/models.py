@@ -7,7 +7,6 @@ from zephyr.const import CONFIG_DIR_PATH, DEFAULT_LOGGER_CONFIG, LOGGER_CONFIGS
 
 # uvicorn服务器配置
 class ServerConfig(BaseModel):
-    app: str = Field(default="zephyr:Zephyr._app", frozen=True)
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = False
@@ -15,15 +14,7 @@ class ServerConfig(BaseModel):
         default_factory=lambda: ServerConfig.get_log_config()
     )
     workers: int = 0
-    factory: bool = False
-
-    def __init__(self, /, **data: Any):
-        super().__init__(**data)
-        # 根据 factory 属性设置 app 字段
-        if self.factory:
-            object.__setattr__(self, "app", "zephyr:Zephyr._init_app")
-        else:
-            object.__setattr__(self, "app", "zephyr:Zephyr._app")
+    factory: bool = True
 
     @staticmethod
     def get_log_config() -> Union[Dict[str, Any], str]:
