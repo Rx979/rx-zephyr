@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # 项目路径
-BASE_PATH = Path.cwd()
+BASE_PATH = (Path(__file__).resolve().parent / '..').resolve()
 
 # 配置文件文件夹名称
 CONFIG_DIR = "config"

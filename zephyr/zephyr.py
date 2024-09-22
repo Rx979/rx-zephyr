@@ -70,7 +70,7 @@ class Zephyr(metaclass=SingletonMeta):
 
     def run(self):
         """Startup server"""
-        server_config = self._config_manager.get_config().app.server
+        server_config = self._config_manager.app_config.app.server
         if server_config.factory:
             app = self._factory_initialize
         else:
@@ -82,7 +82,7 @@ class Zephyr(metaclass=SingletonMeta):
 
     def _initialize_app(self):
         """Initialize the App"""
-        app_config = self._config_manager.get_config().app.model_dump()
+        app_config = self._config_manager.app_config.app.model_dump()
         app = FastAPI(**app_config, lifespan=self.lifespan)
         self._initialize_router(app)
         return app
@@ -113,14 +113,14 @@ class Zephyr(metaclass=SingletonMeta):
 
     def _initialize_redis(self) -> Union[RedisClient, None]:
         """initialize Redis"""
-        redis_config = self._config_manager.get_config().redis
+        redis_config = self._config_manager.app_config.redis
         if not redis_config:
             return
         return RedisClient(**redis_config.model_dump())
 
     def _initialize_database(self) -> Union[None, BaseDatabase]:
         """initialize database"""
-        database_config = self._config_manager.get_config().database
+        database_config = self._config_manager.app_config.database
         if not database_config:
             return
         database_class_list: List[Type[BaseDatabase]] = BaseDatabase.__subclasses__()
@@ -189,7 +189,7 @@ class Zephyr(metaclass=SingletonMeta):
 
     def _log_app_info(self):
         """Record application information"""
-        app_config = self.config_manager.get_config().app
+        app_config = self.config_manager.app_config.app
         self.logger.info(
             f"Application [{app_config.title}] created successfully: "
             f"[{app_config.description}]; version: [{app_config.version}]"
