@@ -7,7 +7,7 @@ from zephyr.const import CONFIG_DIR_PATH, DEFAULT_LOGGER_CONFIG, LOGGER_CONFIGS
 
 # uvicorn服务器配置
 class ServerConfig(BaseModel):
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 8000
     reload: bool = False
     log_config: Union[Dict[str, Any], str] = Field(
