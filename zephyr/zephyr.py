@@ -41,6 +41,7 @@ class Zephyr:
 
     def run(self):
         """Startup server"""
+        self.print_banner()
         self._initialize_app()
         server_config = self._config_manager.app_config.app.server
         app = self._factory_initialize if server_config.factory else self._app
@@ -51,7 +52,6 @@ class Zephyr:
 
     def _initialize_app(self):
         """Initialize the App"""
-        self.print_banner()
         self._config_manager = ConfigManager()
         app_config = self._config_manager.app_config.app.model_dump()
         app = FastAPI(**app_config, lifespan=self.lifespan)
