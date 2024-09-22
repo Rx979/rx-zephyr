@@ -1,9 +1,11 @@
 import logging
+import importlib
+import sys
 from contextlib import asynccontextmanager
-from logging import Logger
+from pathlib import Path
 from typing import Final, List, Optional, Type, Union
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from zephyr.config.manager import ConfigManager
@@ -12,18 +14,19 @@ from zephyr.database.nosql import RedisClient
 from zephyr.database.relational.base import BaseDatabase
 from zephyr.exception.database import DatabaseNotSupportedException
 from zephyr.meta import SingletonMeta
+from zephyr.router import ZephyrRouter
 
 
 class Zephyr(metaclass=SingletonMeta):
 
-    logger: Final[Logger] = logging.getLogger(__name__)
+    logger: Final[logging.Logger] = logging.getLogger(__name__)
 
     def __init__(self):
         self.print_banner()
         self._config_manager = ConfigManager()
+        self._app = self._initialize_app()
         self._database = self._initialize_database()
         self._redis = self._initialize_redis()
-        self._app = self._init_app()
 
     @property
     def config_manager(self) -> ConfigManager:
@@ -65,17 +68,11 @@ class Zephyr(metaclass=SingletonMeta):
             self._database = database
         return
 
-    # @classmethod
-    # def router(cls):
-    #     """register router for fastapi"""
-    #     router = APIRouter()
-    #     cls.app
-
     def run(self):
         """Startup server"""
         server_config = self._config_manager.get_config().app.server
         if server_config.factory:
-            app = self._init_app
+            app = self._factory_initialize
         else:
             app = self._app
 
@@ -83,10 +80,36 @@ class Zephyr(metaclass=SingletonMeta):
         server = Server(config)
         server.run()
 
-    def _init_app(self):
+    def _initialize_app(self):
         """Initialize the App"""
         app_config = self._config_manager.get_config().app.model_dump()
-        return FastAPI(**app_config, lifespan=self.lifespan)
+        app = FastAPI(**app_config, lifespan=self.lifespan)
+        self._initialize_router(app)
+        return app
+
+    def _initialize_router(self, app: FastAPI, path: Path = Path().absolute()):
+        """register router for fastapi"""
+        if not isinstance(app, FastAPI):
+            raise ValueError("The parameter app must be FastAPI")
+
+        for item in path.iterdir():
+            if item.is_dir():
+                self._initialize_router(app, item)
+            elif item.is_file() and item.suffix == '.py':
+                relative_path = item.relative_to(path)
+                module_name = ".".join(relative_path.with_suffix("").parts)
+
+                try:
+                    module = importlib.import_module(module_name)
+
+                    for attr_name in dir(module):
+                        attr = getattr(module, attr_name)
+                        if isinstance(attr, ZephyrRouter):
+                            app.include_router(attr)
+                            self.logger.info(f"register router: {attr.prefix}")
+                    sys.modules.pop(module_name, None)
+                except Exception as e:
+                    self.logger.error("Failed to register router %s", str(e))
 
     def _initialize_redis(self) -> Union[RedisClient, None]:
         """initialize Redis"""
@@ -104,9 +127,12 @@ class Zephyr(metaclass=SingletonMeta):
 
         # Find the corresponding database class
         database_class = next(
-            (db_class for db_class in database_class_list
-             if db_class.database_type() == database_config.database_type),
-            None
+            (
+                db_class
+                for db_class in database_class_list
+                if db_class.database_type() == database_config.database_type
+            ),
+            None,
         )
 
         if database_class:
@@ -116,7 +142,11 @@ class Zephyr(metaclass=SingletonMeta):
         else:
             raise DatabaseNotSupportedException(database_config.database_type)
 
-    #
+    @staticmethod
+    def _factory_initialize():
+        factory_zephyr = Zephyr()
+        return factory_zephyr.app
+
     @staticmethod
     def print_banner():
         """print banner"""

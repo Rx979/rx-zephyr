@@ -34,7 +34,7 @@ class FastAPIConfig(BaseModel):
     docs_url: str = "/docs"
     redoc_url: str = "/redoc"
     version: str = "0.0.1"
-    root_path: str = Field(default="/", alias="prefix")
+    root_path: str = Field(default="", alias="prefix")
     server: ServerConfig = ServerConfig()
 
 

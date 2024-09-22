@@ -3,7 +3,7 @@ import logging
 import logging.config
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from nacos import NacosClient
 

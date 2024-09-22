@@ -2,6 +2,7 @@ class SingletonMeta(type):
     """
     Metaclass that ensures a class has only one instance (singleton).
     """
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
