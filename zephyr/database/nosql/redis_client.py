@@ -1,4 +1,4 @@
-from typing import Union, override
+from typing import Optional, Union, override
 from urllib.parse import quote_plus
 
 from redis.asyncio import ConnectionPool, Redis, RedisError
@@ -31,7 +31,7 @@ class RedisClient(NoSQLClient):
         return "redis://{auth}@{host}:{port}/{database}"
 
     async def initialize(self):
-        """初始化连接"""
+        """initial connection"""
 
         # 构造auth部分
         if self.username and self.password:
@@ -53,14 +53,14 @@ class RedisClient(NoSQLClient):
         await self.validate_connection()
 
     async def close(self):
-        """关闭连接"""
+        """close the connection"""
         if self.redis:
             await self.redis.aclose(close_connection_pool=True)
             self._logger_.info("关闭 Redis 连接池")
 
     @override
     async def validate_connection(self):
-        """验证连接有效性"""
+        """verify that the connection is valid"""
         try:
             response = await self.redis.ping()
             if response:
@@ -71,3 +71,55 @@ class RedisClient(NoSQLClient):
                 raise RedisError()
         except RedisError as e:
             self._logger_.error(f"Redis 连接失败: {str(e)}")
+
+    async def flush_db(self):
+        """delete all keys"""
+        return await self.redis.flushdb()
+
+    async def exists(
+        self,
+        key: Union[str, bytes, memoryview],
+    ):
+        """
+        check whether the key exists
+
+        Args:
+            key: the key name
+
+        Returns:
+            true or false
+        """
+        return bool(await self.redis.exists(key))
+
+    async def get(
+        self,
+        key: Union[str, bytes, memoryview],
+    ):
+        """
+        get the value
+
+        Args:
+            key: the key
+
+        Returns:
+            the value of the key
+        """
+        return await self.redis.get(key)
+
+    async def set(
+        self,
+        key: Union[str, bytes, memoryview],
+        value: Union[bytes, memoryview, str, int, float],
+        expired: Optional[int] = None,
+    ):
+        """
+        set the key and value
+        Args:
+            key: the key name
+            value: the value to set
+            expired: the expiration time
+
+        Returns:
+            Any
+        """
+        return await self.redis.set(key, value, ex=expired)

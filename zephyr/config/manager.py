@@ -56,9 +56,7 @@ class ConfigManager(metaclass=SingletonMeta):
             self.logger.info(
                 f"[加载 Nacos 配置], host: {app_base_config.nacos.host}; namespace: {app_base_config.nacos.namespace}; group: {app_base_config.nacos.group}; data-id: {app_base_config.nacos.data_id}"
             )
-            user_config = self._load_nacos_config(
-                nacos_config=app_base_config.nacos
-            )
+            user_config = self._load_nacos_config(nacos_config=app_base_config.nacos)
         else:
             active = os.getenv("active") or app_base_config.active
             self.logger.info(f"加载 [{active}] 配置文件")

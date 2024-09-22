@@ -1,9 +1,9 @@
-from typing import List, Union, Optional, Sequence, Type, Dict, Any, Callable
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
-from fastapi.responses import JSONResponse, Response
-from fastapi.params import Depends
 from fastapi.datastructures import Default
+from fastapi.params import Depends
+from fastapi.responses import JSONResponse, Response
 from fastapi.routing import APIRoute, APIRouter
 from fastapi.utils import generate_unique_id
 from starlette.routing import BaseRoute

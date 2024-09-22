@@ -1,5 +1,5 @@
-import logging
 import importlib
+import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -91,13 +91,17 @@ class Zephyr(metaclass=SingletonMeta):
         """register router for fastapi"""
         if not isinstance(app, FastAPI):
             raise ValueError("The parameter app must be FastAPI")
+        startup_module = Path(__file__).stem  # 获取启动文件名
 
         for item in path.iterdir():
             if item.is_dir():
                 self._initialize_router(app, item)
-            elif item.is_file() and item.suffix == '.py':
+            elif item.is_file() and item.suffix == ".py":
                 relative_path = item.relative_to(path)
                 module_name = ".".join(relative_path.with_suffix("").parts)
+
+                if module_name in sys.modules or module_name == startup_module:
+                    continue
 
                 try:
                     module = importlib.import_module(module_name)
@@ -106,7 +110,6 @@ class Zephyr(metaclass=SingletonMeta):
                         attr = getattr(module, attr_name)
                         if isinstance(attr, ZephyrRouter):
                             app.include_router(attr)
-                            self.logger.info(f"register router: {attr.prefix}")
                     sys.modules.pop(module_name, None)
                 except Exception as e:
                     self.logger.error("Failed to register router %s", str(e))
