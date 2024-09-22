@@ -144,10 +144,6 @@ class Zephyr:
         self.logger.info(f"Application [{app_config.title}] created successfully: "
                          f"[{app_config.description}]; version: [{app_config.version}]")
 
-    # def _load_config(self):
-    #     """Load configuration manager"""
-    #     self._config_manager = ConfigManager()
-
     @staticmethod
     def _get_site_packages() -> set:
         """Get all site-packages directories"""
