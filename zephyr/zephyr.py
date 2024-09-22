@@ -1,5 +1,6 @@
 import importlib
 import logging
+import site
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -87,13 +88,27 @@ class Zephyr(metaclass=SingletonMeta):
         self._initialize_router(app)
         return app
 
-    def _initialize_router(self, app: FastAPI, path: Path = Path().absolute()):
-        """register router for fastapi"""
+    def _initialize_router(self, app: FastAPI, path: Path = Path().parent.absolute()):
+        """Register router for FastAPI, skipping third-party packages and virtual environments."""
         if not isinstance(app, FastAPI):
             raise ValueError("The parameter app must be FastAPI")
+
         startup_module = Path(__file__).stem  # 获取启动文件名
 
+        # 获取所有 site-packages 目录，用于排除第三方包
+        site_packages = {Path(p).resolve() for p in site.getsitepackages()}
+
+        # 动态检测虚拟环境目录
+        virtual_env_path = None
+        if sys.prefix != sys.base_prefix:
+            virtual_env_path = Path(sys.prefix).resolve()
+
         for item in path.iterdir():
+            # 排除 site-packages 和虚拟环境目录
+            if any(item.resolve().is_relative_to(p) for p in site_packages) or \
+                    (virtual_env_path and item.resolve().is_relative_to(virtual_env_path)):
+                continue
+
             if item.is_dir():
                 self._initialize_router(app, item)
             elif item.is_file() and item.suffix == ".py":
@@ -112,7 +127,7 @@ class Zephyr(metaclass=SingletonMeta):
                             app.include_router(attr)
                     sys.modules.pop(module_name, None)
                 except Exception as e:
-                    self.logger.error("Failed to register router %s", str(e))
+                    self.logger.error(f"Failed to register router: {str(e)}")
 
     def _initialize_redis(self) -> Union[RedisClient, None]:
         """initialize Redis"""

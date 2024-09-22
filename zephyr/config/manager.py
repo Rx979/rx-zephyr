@@ -59,12 +59,15 @@ class ConfigManager(metaclass=SingletonMeta):
             user_config = self._load_nacos_config(nacos_config=app_base_config.nacos)
         else:
             active = os.getenv("active") or app_base_config.active
-            self.logger.info(f"加载 [{active}] 配置文件")
-            extra_config_files = [
-                extra_config_file.format(active=active)
-                for extra_config_file in EXTRA_CONFIGS
-            ]
-            user_config = self._load_config_files(extra_config_files)
+            if active:
+                self.logger.info(f"加载 [{active}] 配置文件")
+                extra_config_files = [
+                    extra_config_file.format(active=active)
+                    for extra_config_file in EXTRA_CONFIGS
+                ]
+                user_config = self._load_config_files(extra_config_files)
+            else:
+                user_config = {}
 
         # 合并基础配置和用户配置
         app_config_dict = app_base_config.model_dump()

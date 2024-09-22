@@ -70,7 +70,7 @@ class DatabaseConfig(BaseModel):
 
 # 整体应用配置
 class AppConfig(BaseModel):
-    active: str = "default"
+    active: Optional[str] = None
     app: Optional[FastAPIConfig] = FastAPIConfig()  # FastAPI 应用配置
     nacos: Optional[NacosConfig] = None  # Nacos配置
     redis: Optional[RedisConfig] = None  # Redis 配置
