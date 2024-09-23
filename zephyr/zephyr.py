@@ -1,10 +1,11 @@
+import importlib.util
 import importlib
 import logging
 import site
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Final, List, Optional, Type, Union
+from typing import Final, Optional, Type
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
@@ -168,13 +169,28 @@ class Zephyr:
         if module_name in sys.modules or module_name == startup_module:
             return
 
+        # Create a full module name including the package
+        full_module_name = f"{self.__module__}.{module_name}"
+
         try:
-            module = importlib.import_module(module_name)
+            # Create a module spec from the file location
+            spec = importlib.util.spec_from_file_location(full_module_name, str(item))
+            if spec is None:
+                raise ImportError(f"Could not load module {full_module_name}")
+
+            # Create a new module based on the spec
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[full_module_name] = module
+            spec.loader.exec_module(module)
+
+            # Include routers from the module
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
                 if isinstance(attr, ZephyrRouter):
                     app.include_router(attr)
-            sys.modules.pop(module_name, None)
+
+            # Optionally remove the module from sys.modules after use
+            sys.modules.pop(full_module_name, None)
         except Exception as e:
             self.logger.error(f"Failed to register router: {str(e)}")
 
